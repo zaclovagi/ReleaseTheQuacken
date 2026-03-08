@@ -22,9 +22,9 @@ public class Player : MonoBehaviour
     public Game game;
 
     [Header("Quack Meter")]
-    public float quackMeterMax = 10f;
-    public float quackMeterFillPerPress = 1f;
-    public float quackMeterDecayRate = 2f;
+    public float quackMeterMax = 3f;
+    public int pressesToFill = 5;
+    public float quackMeterDecayRate = 10f;
 
     public float QuackMeterNormalized => quackMeterMax > 0f ? quackMeter / quackMeterMax : 0f;
 
@@ -91,7 +91,7 @@ public class Player : MonoBehaviour
             }
             TryEatInFront();
 
-            quackMeter += quackMeterFillPerPress;
+            quackMeter += quackMeterMax / pressesToFill;
             if (quackMeter >= quackMeterMax)
                 Explode();
         }
