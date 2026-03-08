@@ -30,7 +30,13 @@ public class Player : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Ground"))
+        if (collision.gameObject.layer == 0)
+            isGrounded = true;
+    }
+
+    void OnCollisionStay(Collision collision)
+    {
+        if (collision.gameObject.layer == 0)
             isGrounded = true;
     }
 }
