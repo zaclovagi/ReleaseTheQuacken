@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
@@ -18,6 +19,7 @@ public class Player : MonoBehaviour
 
     public float scaleSmoothing = 5f;
     public GameObject explosionPrefab;
+    public Game game;
 
     [Header("Quack Meter")]
     public float quackMeterMax = 10f;
@@ -31,6 +33,7 @@ public class Player : MonoBehaviour
     private float targetScale;
     private int score;
     private float quackMeter;
+    private bool _won;
 
     void Start()
     {
@@ -44,6 +47,13 @@ public class Player : MonoBehaviour
 
     void Update()
     {
+        if (_won)
+        {
+            if (Input.GetKeyDown(KeyCode.Space))
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            return;
+        }
+
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
 
@@ -137,6 +147,12 @@ public class Player : MonoBehaviour
         float sizeRatio = 1f + score * sizePerPoint;
         targetScale = baseScale * sizeRatio;
         moveSpeed = baseMoveSpeed * (1f + (sizeRatio - 1f) * speedIncreaseRate);
+
+        if (!_won && targetScale >= 1000f)
+        {
+            _won = true;
+            game.Win();
+        }
     }
 
     void Explode()
