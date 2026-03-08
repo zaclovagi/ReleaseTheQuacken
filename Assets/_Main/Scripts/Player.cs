@@ -149,7 +149,6 @@ public class Player : MonoBehaviour
         quackMeter = 0f;
         targetScale = baseScale;
         moveSpeed = baseMoveSpeed;
-        transform.localScale = Vector3.one * baseScale;
         Debug.Log("EXPLODED! Size reset.");
     }
 }
