@@ -1338,7 +1338,9 @@ GameObject:
   - component: {fileID: 445654}
   - component: {fileID: 9596886}
   - component: {fileID: 1890417497357545882}
-  m_Layer: 0
+  - component: {fileID: -4247210824154794149}
+  - component: {fileID: 2859473144084766691}
+  m_Layer: 6
   m_Name: SM_Chr_Gangster_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1422,9 +1424,45 @@ MonoBehaviour:
   rayOriginHeight: 0.6
   wanderChangeInterval: 3
   wanderTurnRange: 90
-  panicRadius: 8
+  quackHearRadius: 8
   fleeRadius: 14
-  panicAnimTrigger: Panic
+  panicAnimBool: isPanicking
+--- !u!114 &-4247210824154794149
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 137922}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a8e483326e024fffa13ef3f15675936, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Food
+  foodValue: 15
+--- !u!136 &2859473144084766691
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 137922}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 1
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &143426
 GameObject:
   m_ObjectHideFlags: 0

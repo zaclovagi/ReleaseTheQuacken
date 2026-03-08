@@ -2,142 +2,191 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Spawns and pools pedestrian and vehicle NPCs at designated spawn points.
-/// NPCs that wander too far from their spawn point are returned to the pool
-/// and re-spawned, keeping the city area always populated.
+/// Spawns pedestrian NPCs in a ring around the player as they explore.
+/// NPCs too far from the player are returned to the pool.
+/// AllNPCs is a global list of every currently live NPC.
 /// </summary>
 public class NPCSpawner : MonoBehaviour
 {
-    [System.Serializable]
-    public class SpawnEntry
-    {
-        public GameObject prefab;
-        [Tooltip("Points where this NPC type can appear. At least one required.")]
-        public Transform[] spawnPoints;
-        [Tooltip("Max simultaneous instances of this prefab.")]
-        public int maxCount = 5;
-        [Tooltip("How far from its spawn point before an NPC is recycled.")]
-        public float recycleDistance = 40f;
-    }
+    // Global list of every currently live NPC.
+    public static List<GameObject> AllNPCs { get; private set; } = new List<GameObject>();
 
     [Header("NPC Definitions")]
-    public SpawnEntry[] pedestrians;
+    public GameObject[] pedestrianPrefabs;
+
+    [Header("Limits")]
+    [Tooltip("Maximum total NPCs alive at once across all types.")]
+    public int maxNPCs = 20;
+
+    [Header("Spawn Range")]
+    [Tooltip("Minimum distance from player to spawn NPCs.")]
+    public float spawnRangeMin = 20f;
+    [Tooltip("NPCs beyond this distance from the player are despawned.")]
+    public float despawnRange = 40f;
+    [Tooltip("How many spawn attempts per interval.")]
+    public int spawnAttemptsPerTick = 3;
 
     [Header("Timing")]
-    public float spawnInterval = 2f;
+    public float spawnInterval = 1.5f;
 
     // Pool: maps prefab -> inactive instances
-    private Dictionary<GameObject, Queue<GameObject>> pool = new();
-    // Active instances per SpawnEntry
-    private Dictionary<SpawnEntry, List<GameObject>> active = new();
+    private Dictionary<GameObject, Queue<GameObject>> pool = new Dictionary<GameObject, Queue<GameObject>>();
+    // All active instances
+    private List<GameObject> active = new List<GameObject>();
 
+    private Transform player;
     private float spawnTimer;
 
     void Start()
     {
-        // Pre-warm pools for all entries
-        foreach (var entry in pedestrians) RegisterEntry(entry);
+        player = GameObject.FindWithTag("Player")?.transform;
+
+        foreach (var prefab in pedestrianPrefabs)
+        {
+            if (prefab == null) continue;
+            if (!pool.ContainsKey(prefab))
+                pool[prefab] = new Queue<GameObject>();
+        }
     }
 
     void Update()
     {
+        if (player == null) return;
+
         spawnTimer += Time.deltaTime;
-        if (spawnTimer < spawnInterval) return;
-        spawnTimer = 0f;
+        if (spawnTimer >= spawnInterval)
+        {
+            spawnTimer = 0f;
+            TryPopulate();
+        }
 
-        foreach (var entry in pedestrians) TryPopulate(entry);
-
-        RecycleDistant();
-    }
-
-    // -------------------------------------------------------------------------
-    // Setup
-    // -------------------------------------------------------------------------
-
-    void RegisterEntry(SpawnEntry entry)
-    {
-        if (entry.prefab == null) return;
-        if (!pool.ContainsKey(entry.prefab))
-            pool[entry.prefab] = new Queue<GameObject>();
-        active[entry] = new List<GameObject>();
+        DespawnDistant();
     }
 
     // -------------------------------------------------------------------------
     // Spawning
     // -------------------------------------------------------------------------
 
-    void TryPopulate(SpawnEntry entry)
+    void TryPopulate()
     {
-        if (entry.prefab == null) return;
-        if (entry.spawnPoints == null || entry.spawnPoints.Length == 0) return;
-        if (active[entry].Count >= entry.maxCount) return;
+        if (pedestrianPrefabs == null || pedestrianPrefabs.Length == 0) return;
 
-        Transform spawnPoint = entry.spawnPoints[Random.Range(0, entry.spawnPoints.Length)];
-        if (spawnPoint == null) return;
+        active.RemoveAll(o => o == null);
 
-        GameObject npc = GetFromPool(entry.prefab, spawnPoint.position, spawnPoint.rotation);
-        active[entry].Add(npc);
+        if (AllNPCs.Count >= maxNPCs) return;
+
+        for (int i = 0; i < spawnAttemptsPerTick; i++)
+        {
+            if (AllNPCs.Count >= maxNPCs) break;
+
+            if (!TryGetSpawnPosition(out Vector3 spawnPos)) continue;
+
+            GameObject prefab = pedestrianPrefabs[Random.Range(0, pedestrianPrefabs.Length)];
+            if (prefab == null) continue;
+
+            Quaternion rot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+            GameObject npc = GetFromPool(prefab, spawnPos, rot);
+
+            active.Add(npc);
+            AllNPCs.Add(npc);
+
+            NPCSpawnedObject tracker = npc.GetComponent<NPCSpawnedObject>();
+            if (tracker == null)
+                tracker = npc.AddComponent<NPCSpawnedObject>();
+            tracker.Init(this, prefab, npc);
+        }
     }
+
+    bool TryGetSpawnPosition(out Vector3 pos)
+    {
+        // When sidewalk spawn points are present, only spawn there.
+        if (SidewalkSpawnPoint.All.Count > 0)
+        {
+            // Collect points within the spawn ring around the player.
+            var candidates = new System.Collections.Generic.List<SidewalkSpawnPoint>();
+            foreach (var sp in SidewalkSpawnPoint.All)
+            {
+                if (sp == null) continue;
+                float d = Vector3.Distance(sp.transform.position, player.position);
+                if (d >= spawnRangeMin && d <= despawnRange * 0.8f)
+                    candidates.Add(sp);
+            }
+
+            if (candidates.Count > 0)
+            {
+                pos = candidates[Random.Range(0, candidates.Count)].transform.position;
+                return true;
+            }
+
+            // No sidewalk points are in range — don't fall back to random positions.
+            pos = Vector3.zero;
+            return false;
+        }
+
+        // Fallback: random raycast (used before any sidewalk points are placed in the scene).
+        float angle = Random.Range(0f, Mathf.PI * 2f);
+        float dist  = Random.Range(spawnRangeMin, despawnRange * 0.8f);
+        Vector3 candidate = player.position + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * dist;
+
+        if (Physics.Raycast(candidate + Vector3.up * 5f, Vector3.down, out RaycastHit hit, 20f))
+        {
+            pos = hit.point;
+            return true;
+        }
+
+        pos = Vector3.zero;
+        return false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Despawning
+    // -------------------------------------------------------------------------
+
+    void DespawnDistant()
+    {
+        for (int i = active.Count - 1; i >= 0; i--)
+        {
+            GameObject npc = active[i];
+            if (npc == null) { active.RemoveAt(i); continue; }
+
+            if (Vector3.Distance(npc.transform.position, player.position) > despawnRange)
+            {
+                AllNPCs.Remove(npc);
+                NPCSpawnedObject tracker = npc.GetComponent<NPCSpawnedObject>();
+                ReturnToPool(tracker != null ? tracker.Prefab : npc, npc);
+                active.RemoveAt(i);
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Pool helpers
+    // -------------------------------------------------------------------------
 
     GameObject GetFromPool(GameObject prefab, Vector3 position, Quaternion rotation)
     {
-        Queue<GameObject> q = pool[prefab];
-
-        GameObject instance;
-        if (q.Count > 0)
+        if (pool.ContainsKey(prefab) && pool[prefab].Count > 0)
         {
-            instance = q.Dequeue();
+            GameObject instance = pool[prefab].Dequeue();
             instance.transform.SetPositionAndRotation(position, rotation);
             instance.SetActive(true);
+            return instance;
         }
-        else
-        {
-            instance = Instantiate(prefab, position, rotation, transform);
-        }
-
-        return instance;
-    }
-
-    // -------------------------------------------------------------------------
-    // Recycling
-    // -------------------------------------------------------------------------
-
-    void RecycleDistant()
-    {
-        foreach (var entry in pedestrians) RecycleEntry(entry);
-    }
-
-    void RecycleEntry(SpawnEntry entry)
-    {
-        if (entry.spawnPoints == null || entry.spawnPoints.Length == 0) return;
-
-        List<GameObject> list = active[entry];
-        for (int i = list.Count - 1; i >= 0; i--)
-        {
-            GameObject npc = list[i];
-            if (npc == null) { list.RemoveAt(i); continue; }
-
-            // Check distance from all spawn points; keep alive if near any of them
-            float minDist = float.MaxValue;
-            foreach (var sp in entry.spawnPoints)
-            {
-                if (sp == null) continue;
-                float d = Vector3.Distance(npc.transform.position, sp.position);
-                if (d < minDist) minDist = d;
-            }
-
-            if (minDist > entry.recycleDistance)
-            {
-                ReturnToPool(entry.prefab, npc);
-                list.RemoveAt(i);
-            }
-        }
+        return Instantiate(prefab, position, rotation, transform);
     }
 
     void ReturnToPool(GameObject prefab, GameObject instance)
     {
         instance.SetActive(false);
+        if (!pool.ContainsKey(prefab))
+            pool[prefab] = new Queue<GameObject>();
         pool[prefab].Enqueue(instance);
+    }
+
+    public void NotifyDestroyed(GameObject prefab, GameObject npc)
+    {
+        active.Remove(npc);
+        AllNPCs.Remove(npc);
     }
 
     // -------------------------------------------------------------------------
@@ -146,21 +195,10 @@ public class NPCSpawner : MonoBehaviour
 
     void OnDrawGizmos()
     {
-        DrawEntryGizmos(pedestrians, Color.green);
-    }
-
-    void DrawEntryGizmos(SpawnEntry[] entries, Color color)
-    {
-        if (entries == null) return;
-        Gizmos.color = color;
-        foreach (var entry in entries)
-        {
-            if (entry?.spawnPoints == null) continue;
-            foreach (var sp in entry.spawnPoints)
-            {
-                if (sp != null)
-                    Gizmos.DrawWireSphere(sp.position, 1f);
-            }
-        }
+        if (player == null) return;
+        Gizmos.color = new Color(0f, 1f, 0f, 0.3f);
+        Gizmos.DrawWireSphere(player.position, spawnRangeMin);
+        Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
+        Gizmos.DrawWireSphere(player.position, despawnRange);
     }
 }

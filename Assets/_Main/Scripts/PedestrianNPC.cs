@@ -26,7 +26,8 @@ public class PedestrianNPC : MonoBehaviour
     public float wanderTurnRange = 90f;
 
     [Header("Detection")]
-    public float panicRadius = 8f;
+    [Tooltip("How far the NPC can hear a quack and start panicking.")]
+    public float quackHearRadius = 8f;
     public float fleeRadius = 14f;
 
     [Header("Panic")]
@@ -42,6 +43,23 @@ public class PedestrianNPC : MonoBehaviour
     private float wanderTimer;
     private float panicFreezeTimer;
     private const float PanicFreezeDuration = 0.3f;
+
+    void OnEnable()
+    {
+        Player.OnQuack += OnQuackHeard;
+    }
+
+    void OnDisable()
+    {
+        Player.OnQuack -= OnQuackHeard;
+    }
+
+    void OnQuackHeard(Vector3 quackPos, float radius)
+    {
+        if (state == State.Ragdoll || state == State.Fleeing || state == State.Panicking) return;
+        if (Vector3.Distance(transform.position, quackPos) <= radius)
+            EnterPanic();
+    }
 
     void Awake()
     {
@@ -68,14 +86,10 @@ public class PedestrianNPC : MonoBehaviour
         float distToPlayer = player != null
             ? Vector3.Distance(transform.position, player.position)
             : float.MaxValue;
-
         switch (state)
         {
             case State.Wandering:
-                if (distToPlayer <= panicRadius)
-                    EnterPanic();
-                else
-                    HandleWander();
+                HandleWander();
                 break;
 
             case State.Panicking:
@@ -261,7 +275,7 @@ public class PedestrianNPC : MonoBehaviour
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, panicRadius);
+        Gizmos.DrawWireSphere(transform.position, quackHearRadius);
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, fleeRadius);
 

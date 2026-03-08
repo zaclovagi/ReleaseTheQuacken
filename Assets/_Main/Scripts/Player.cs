@@ -1,12 +1,17 @@
 using UnityEngine;
+using System;
 
 public class Player : MonoBehaviour
 {
+    public static event Action<Vector3, float> OnQuack;
+
     public float moveSpeed = 5f;
     public float rotateSpeed = 90f;
     public float sizePerPoint = 0.01f;
     public int baseMaxEdibleValue = 10;
     public GameObject quackPrefab;
+    public float quackPanicRadius = 10f;
+    public Animator animator;
 
     private Collider col;
     private float baseMoveSpeed;
@@ -30,11 +35,24 @@ public class Player : MonoBehaviour
         transform.Rotate(0f, horizontal * rotateSpeed * Time.deltaTime, 0f);
         transform.Translate(0f, 0f, vertical * moveSpeed * Time.deltaTime);
 
+        if (animator != null)
+        {
+            float moveValue = Mathf.Approximately(vertical, 0f) ? 0f : Mathf.Sign(vertical);
+            animator.SetFloat("Move", moveValue);
+        }
+
         if (Input.GetKeyDown(KeyCode.Space) && quackPrefab != null && Time.time >= lastQuackTime + quackCooldown)
         {
             GameObject quack = Instantiate(quackPrefab, transform.position, transform.rotation);
             quack.transform.localScale *= transform.localScale.x / baseScale;
             lastQuackTime = Time.time;
+
+            if (animator != null)
+                animator.SetTrigger("Attack");
+
+            float sizeRatio = transform.localScale.x / baseScale;
+            OnQuack?.Invoke(transform.position, quackPanicRadius * sizeRatio);
+
             TryEatInFront();
         }
     }
