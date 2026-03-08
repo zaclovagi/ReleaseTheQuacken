@@ -26,6 +26,8 @@ public class Player : MonoBehaviour
     public float quackMeterFillPerPress = 1f;
     public float quackMeterDecayRate = 2f;
 
+    public float QuackMeterNormalized => quackMeterMax > 0f ? quackMeter / quackMeterMax : 0f;
+
     private Collider col;
     private AudioSource audioSource;
     private float baseMoveSpeed;
