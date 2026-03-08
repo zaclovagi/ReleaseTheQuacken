@@ -32,8 +32,31 @@ public class Player : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space) && quackPrefab != null && Time.time >= lastQuackTime + quackCooldown)
         {
-            Instantiate(quackPrefab, transform.position, transform.rotation);
+            GameObject quack = Instantiate(quackPrefab, transform.position, transform.rotation);
+            quack.transform.localScale *= transform.localScale.x / baseScale;
             lastQuackTime = Time.time;
+            TryEatInFront();
+        }
+    }
+
+    void TryEatInFront()
+    {
+        float radius = col.bounds.extents.x;
+        float distance = col.bounds.extents.z + 2f;
+        RaycastHit[] hits = Physics.SphereCastAll(transform.position, radius, transform.forward, distance);
+        foreach (RaycastHit hit in hits)
+        {
+            // Skip anything behind or to the side
+            Vector3 toHit = (hit.collider.bounds.center - transform.position).normalized;
+            if (Vector3.Dot(toHit, transform.forward) <= 0f)
+                continue;
+
+            Food food = hit.collider.GetComponent<Food>();
+            if (food != null && CanEat(food))
+            {
+                AddScore(food.foodValue);
+                Destroy(hit.collider.gameObject);
+            }
         }
     }
 
@@ -67,6 +90,6 @@ public class Player : MonoBehaviour
     {
         float sizeRatio = 1f + score * sizePerPoint;
         transform.localScale = Vector3.one * baseScale * sizeRatio;
-        moveSpeed = baseMoveSpeed * sizeRatio;
+        moveSpeed = baseMoveSpeed / sizeRatio;
     }
 }
