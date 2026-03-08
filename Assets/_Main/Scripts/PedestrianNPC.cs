@@ -7,7 +7,7 @@ using UnityEngine;
 /// </summary>
 public class PedestrianNPC : MonoBehaviour
 {
-    public enum State { Wandering, Panicking, Fleeing, Ragdoll }
+    public enum State { Wandering, Panicking, Fleeing, Ragdoll, Attacking }
 
     [Header("Movement")]
     public float normalSpeed = 1.4f;
@@ -30,18 +30,35 @@ public class PedestrianNPC : MonoBehaviour
     public float quackHearRadius = 8f;
     public float fleeRadius = 14f;
 
+    [Header("Attack")]
+    [Tooltip("Distance at which the NPC begins chasing and attacking the player.")]
+    public float attackRange = 5f;
+    [Tooltip("Distance at which the NPC deals damage to the player.")]
+    public float attackContactRadius = 1.5f;
+    [Tooltip("Score points removed from the player per hit.")]
+    public int attackDamageScore = 10;
+    [Tooltip("Seconds between hits.")]
+    public float attackCooldown = 1f;
+    public float attackChaseSpeed = 3f;
+
     [Header("Panic")]
     [Tooltip("Animator bool parameter name for panicking state.")]
     public string panicAnimBool = "isPanicking";
 
+    [Header("Attack Animator")]
+    [Tooltip("Animator trigger parameter name fired when the NPC hits the player.")]
+    public string attackAnimTrigger = "Attack";
+
     private Rigidbody rb;
     private Animator animator;
     private Transform player;
+    private Player playerScript;
     private State state = State.Wandering;
 
     private float currentSpeed;
     private float wanderTimer;
     private float panicFreezeTimer;
+    private float attackCooldownTimer;
     private const float PanicFreezeDuration = 0.3f;
 
     void OnEnable()
@@ -74,7 +91,9 @@ public class PedestrianNPC : MonoBehaviour
 
     void Start()
     {
-        player = GameObject.FindWithTag("Player")?.transform;
+        var playerGO = GameObject.FindWithTag("Player");
+        player = playerGO?.transform;
+        playerScript = playerGO?.GetComponent<Player>();
         currentSpeed = normalSpeed;
         wanderTimer = Random.Range(0f, wanderChangeInterval);
     }
@@ -89,7 +108,10 @@ public class PedestrianNPC : MonoBehaviour
         switch (state)
         {
             case State.Wandering:
-                HandleWander();
+                if (distToPlayer <= attackRange)
+                    EnterAttack();
+                else
+                    HandleWander();
                 break;
 
             case State.Panicking:
@@ -103,6 +125,10 @@ public class PedestrianNPC : MonoBehaviour
                     ExitFlee();
                 else
                     HandleFlee();
+                break;
+
+            case State.Attacking:
+                HandleAttack(distToPlayer);
                 break;
         }
     }
@@ -140,6 +166,50 @@ public class PedestrianNPC : MonoBehaviour
         wanderTimer = 0f;
         if (animator != null && !string.IsNullOrEmpty(panicAnimBool))
             animator.SetBool(panicAnimBool, false);
+    }
+
+    void EnterAttack()
+    {
+        state = State.Attacking;
+        currentSpeed = attackChaseSpeed;
+        attackCooldownTimer = attackCooldown; // ready to hit immediately on contact
+    }
+
+    void HandleAttack(float distToPlayer)
+    {
+        // Give up if player moved far enough away
+        if (distToPlayer > attackRange * 1.5f)
+        {
+            state = State.Wandering;
+            currentSpeed = normalSpeed;
+            wanderTimer = 0f;
+            return;
+        }
+
+        // Face and chase player
+        if (player != null)
+        {
+            Vector3 dir = player.position - transform.position;
+            dir.y = 0f;
+            if (dir.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRot = Quaternion.LookRotation(dir.normalized);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, turnSpeed * Time.deltaTime);
+            }
+        }
+
+        if (IsBlocked())
+            TurnAwayFromObstacle();
+
+        // Deal damage when close enough
+        attackCooldownTimer += Time.deltaTime;
+        if (distToPlayer <= attackContactRadius && attackCooldownTimer >= attackCooldown)
+        {
+            attackCooldownTimer = 0f;
+            if (animator != null && !string.IsNullOrEmpty(attackAnimTrigger))
+                animator.SetTrigger(attackAnimTrigger);
+            playerScript?.TakeDamage(attackDamageScore);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -278,6 +348,8 @@ public class PedestrianNPC : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, quackHearRadius);
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, fleeRadius);
+        Gizmos.color = new Color(1f, 0.5f, 0f); // orange
+        Gizmos.DrawWireSphere(transform.position, attackRange);
 
         Vector3 origin = transform.position + Vector3.up * rayOriginHeight;
         Gizmos.color = Color.white;

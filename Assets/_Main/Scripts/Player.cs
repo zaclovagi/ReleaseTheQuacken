@@ -157,6 +157,13 @@ public class Player : MonoBehaviour
         }
     }
 
+    public void TakeDamage(int amount)
+    {
+        score = Mathf.Max(0, score - amount);
+        UpdateSize();
+        Debug.Log($"Player hit! Score: {score}");
+    }
+
     void Explode()
     {
         if (explosionPrefab != null)
