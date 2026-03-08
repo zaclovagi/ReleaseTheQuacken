@@ -9,6 +9,7 @@ public class Intro : MonoBehaviour
     public double switchTime = 3.0;
     public RawImage videoDisplay;
     public float fadeLeadTime = 2f;
+    public Game game;
 
     private VideoPlayer videoPlayer;
     private bool switched = false;
@@ -52,9 +53,10 @@ public class Intro : MonoBehaviour
         }
 
 
-        if (remaining <= 0.05)
+        if (remaining <= 0.1 || Input.GetKeyDown(KeyCode.Space))
         {
             Debug.Log("Intro finished, destroying.");
+            game.StartGame();
             Destroy(gameObject);
         }
     }
