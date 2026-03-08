@@ -101,7 +101,7 @@ public class Player : MonoBehaviour
             Food food = hit.collider.GetComponent<Food>();
             if (food != null && CanEat(food))
             {
-                AddScore(food.foodValue);
+                AddScore(food.foodValue / 2);
                 Destroy(hit.collider.gameObject);
             }
         }
