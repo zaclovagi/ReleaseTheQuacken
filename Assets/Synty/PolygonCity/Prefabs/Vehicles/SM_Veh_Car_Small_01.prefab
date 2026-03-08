@@ -425,7 +425,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a8e483326e024fffa13ef3f15675936, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Food
-  foodValue: 10
+  foodValue: 25
 --- !u!1 &135354
 GameObject:
   m_ObjectHideFlags: 0
