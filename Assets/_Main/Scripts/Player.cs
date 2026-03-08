@@ -74,9 +74,8 @@ public class Player : MonoBehaviour
             OnQuack?.Invoke(transform.position, quackPanicRadius * sizeRatio);
             if (quackSounds != null && quackSounds.Length > 0)
             {
-                audioSource.pitch = UnityEngine.Random.Range(0.8f, 1.3f);
-                audioSource.volume = UnityEngine.Random.Range(0.7f, 1f);
-                audioSource.PlayOneShot(quackSounds[UnityEngine.Random.Range(0, quackSounds.Length)]);
+                AudioClip clip = quackSounds[UnityEngine.Random.Range(0, quackSounds.Length)];
+                audioSource.PlayOneShot(clip);
             }
             TryEatInFront();
 
