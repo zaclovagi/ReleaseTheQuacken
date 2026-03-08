@@ -18,7 +18,7 @@ public class Player : MonoBehaviour
     private float baseScale;
     private float targetScale;
     private int score;
-    private readonly float quackCooldown = 1f;
+    private readonly float quackCooldown = 0.5f;
     private float lastQuackTime = -Mathf.Infinity;
 
     void Start()
@@ -48,7 +48,11 @@ public class Player : MonoBehaviour
             quack.transform.localScale *= transform.localScale.x / baseScale;
             lastQuackTime = Time.time;
             if (quackSounds != null && quackSounds.Length > 0)
+            {
+                audioSource.pitch = Random.Range(0.8f, 1.3f);
+                audioSource.volume = Random.Range(0.7f, 1f);
                 audioSource.PlayOneShot(quackSounds[Random.Range(0, quackSounds.Length)]);
+            }
             TryEatInFront();
         }
     }
