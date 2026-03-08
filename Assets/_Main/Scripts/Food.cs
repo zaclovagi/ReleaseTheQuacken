@@ -7,7 +7,7 @@ public class Food : MonoBehaviour
 
     void OnDestroy()
     {
-        if (eatVFXPrefab != null)
+        if (eatVFXPrefab != null && Application.isPlaying)
             Instantiate(eatVFXPrefab, transform.position, transform.rotation);
     }
 }
