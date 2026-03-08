@@ -110,7 +110,7 @@ public class FoodSpawner : MonoBehaviour
 
         // Fallback: random raycast when no sidewalk points exist.
         float angle = Random.Range(0f, Mathf.PI * 2f);
-        float dist  = Random.Range(spawnRangeMin, despawnRange * 0.8f);
+        float dist = Random.Range(spawnRangeMin, despawnRange * 0.8f);
         Vector3 candidate = player.position + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * dist;
 
         if (Physics.Raycast(candidate + Vector3.up * 5f, Vector3.down, out RaycastHit hit, 20f))

@@ -4,7 +4,6 @@
   <Project Path="MKEdgeDetectionComponents.csproj" />
   <Project Path="MKEdgeDetection.csproj" />
   <Project Path="QFSW.QC.Extras.csproj" />
-  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="QFSW.QC.csproj" />
   <Project Path="QFSW.QC.Grammar.csproj" />
   <Project Path="MKEdgeDetectionEditor.csproj" />

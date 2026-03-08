@@ -71,7 +71,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Food
   foodValue: 1
-  eatVFXPrefab: {fileID: 0}
+  eatVFXPrefab: {fileID: 1277154925287174, guid: c2ee7481f61ac4ca8913d4d234d111c5, type: 3}
 --- !u!114 &7689935112518486954
 MonoBehaviour:
   m_ObjectHideFlags: 0
