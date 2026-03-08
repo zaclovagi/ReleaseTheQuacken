@@ -17,6 +17,12 @@ public class Player : MonoBehaviour
     public AudioClip[] quackSounds;
 
     public float scaleSmoothing = 5f;
+    public GameObject explosionPrefab;
+
+    [Header("Quack Meter")]
+    public float quackMeterMax = 10f;
+    public float quackMeterFillPerPress = 1f;
+    public float quackMeterDecayRate = 2f;
 
     private Collider col;
     private AudioSource audioSource;
@@ -24,8 +30,7 @@ public class Player : MonoBehaviour
     private float baseScale;
     private float targetScale;
     private int score;
-    private readonly float quackCooldown = 0.5f;
-    private float lastQuackTime = -Mathf.Infinity;
+    private float quackMeter;
 
     void Start()
     {
@@ -54,28 +59,30 @@ public class Player : MonoBehaviour
             animator.SetFloat("Move", moveValue);
         }
 
-        if (Input.GetKeyDown(KeyCode.Space) && quackPrefab != null && Time.time >= lastQuackTime + quackCooldown)
+        if (quackMeter > 0f)
+            quackMeter = Mathf.Max(0f, quackMeter - quackMeterDecayRate * Time.deltaTime);
+
+        if (Input.GetKeyDown(KeyCode.Space) && quackPrefab != null)
         {
             GameObject quack = Instantiate(quackPrefab, transform.position, transform.rotation);
             quack.transform.localScale *= transform.localScale.x / baseScale;
-            lastQuackTime = Time.time;
 
             if (animator != null)
-            {
                 animator.SetTrigger("Attack");
-            }
 
             float sizeRatio = transform.localScale.x / baseScale;
             OnQuack?.Invoke(transform.position, quackPanicRadius * sizeRatio);
-
-
             if (quackSounds != null && quackSounds.Length > 0)
             {
-                audioSource.pitch = Random.Range(0.8f, 1.3f);
-                audioSource.volume = Random.Range(0.7f, 1f);
-                audioSource.PlayOneShot(quackSounds[Random.Range(0, quackSounds.Length)]);
+                audioSource.pitch = UnityEngine.Random.Range(0.8f, 1.3f);
+                audioSource.volume = UnityEngine.Random.Range(0.7f, 1f);
+                audioSource.PlayOneShot(quackSounds[UnityEngine.Random.Range(0, quackSounds.Length)]);
             }
             TryEatInFront();
+
+            quackMeter += quackMeterFillPerPress;
+            if (quackMeter >= quackMeterMax)
+                Explode();
         }
     }
 
@@ -131,5 +138,18 @@ public class Player : MonoBehaviour
         float sizeRatio = 1f + score * sizePerPoint;
         targetScale = baseScale * sizeRatio;
         moveSpeed = baseMoveSpeed * (1f + (sizeRatio - 1f) * speedIncreaseRate);
+    }
+
+    void Explode()
+    {
+        if (explosionPrefab != null)
+            Instantiate(explosionPrefab, transform.position, Quaternion.identity);
+
+        score = 0;
+        quackMeter = 0f;
+        targetScale = baseScale;
+        moveSpeed = baseMoveSpeed;
+        transform.localScale = Vector3.one * baseScale;
+        Debug.Log("EXPLODED! Size reset.");
     }
 }
