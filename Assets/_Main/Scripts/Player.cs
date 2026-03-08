@@ -3,14 +3,20 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     public float moveSpeed = 5f;
-    public float rotateSpeed = 90f;
-    public float sizePerPoint = 0.01f;
+    public float rotateSpeed = 150f;
+    public float sizePerPoint = 0.001f;
+    public float speedIncreaseRate = 1f;
     public int baseMaxEdibleValue = 10;
     public GameObject quackPrefab;
+    public AudioClip[] quackSounds;
+
+    public float scaleSmoothing = 5f;
 
     private Collider col;
+    private AudioSource audioSource;
     private float baseMoveSpeed;
     private float baseScale;
+    private float targetScale;
     private int score;
     private readonly float quackCooldown = 1f;
     private float lastQuackTime = -Mathf.Infinity;
@@ -18,14 +24,20 @@ public class Player : MonoBehaviour
     void Start()
     {
         col = GetComponent<Collider>();
+        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.spatialBlend = 0f;
         baseMoveSpeed = moveSpeed;
         baseScale = transform.localScale.x;
+        targetScale = baseScale;
     }
 
     void Update()
     {
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
+
+        float currentScale = Mathf.Lerp(transform.localScale.x, targetScale, scaleSmoothing * Time.deltaTime);
+        transform.localScale = Vector3.one * currentScale;
 
         transform.Rotate(0f, horizontal * rotateSpeed * Time.deltaTime, 0f);
         transform.Translate(0f, 0f, vertical * moveSpeed * Time.deltaTime);
@@ -35,6 +47,8 @@ public class Player : MonoBehaviour
             GameObject quack = Instantiate(quackPrefab, transform.position, transform.rotation);
             quack.transform.localScale *= transform.localScale.x / baseScale;
             lastQuackTime = Time.time;
+            if (quackSounds != null && quackSounds.Length > 0)
+                audioSource.PlayOneShot(quackSounds[Random.Range(0, quackSounds.Length)]);
             TryEatInFront();
         }
     }
@@ -89,7 +103,7 @@ public class Player : MonoBehaviour
     void UpdateSize()
     {
         float sizeRatio = 1f + score * sizePerPoint;
-        transform.localScale = Vector3.one * baseScale * sizeRatio;
-        moveSpeed = baseMoveSpeed / sizeRatio;
+        targetScale = baseScale * sizeRatio;
+        moveSpeed = baseMoveSpeed * (1f + (sizeRatio - 1f) * speedIncreaseRate);
     }
 }
