@@ -150,7 +150,7 @@ public class Player : MonoBehaviour
         targetScale = baseScale * sizeRatio;
         moveSpeed = baseMoveSpeed * (1f + (sizeRatio - 1f) * speedIncreaseRate);
 
-        if (!_won && targetScale >= 800)
+        if (!_won && targetScale >= 500)
         {
             _won = true;
             game.Win();

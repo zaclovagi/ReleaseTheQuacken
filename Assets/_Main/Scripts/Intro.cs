@@ -9,16 +9,19 @@ public class Intro : MonoBehaviour
     public double switchTime = 3.0;
     public RawImage videoDisplay;
     public float fadeLeadTime = 2f;
+    public float startDelay = 1f;
     public Game game;
 
     private VideoPlayer videoPlayer;
     private bool switched = false;
     private bool fading = false;
+    private float delayTimer = 0f;
+    private bool started = false;
 
     void Start()
     {
         videoPlayer = transform.Find("Intro").GetComponent<VideoPlayer>();
-        videoPlayer.Play();
+        videoPlayer.Prepare();
 
         sadNode.SetActive(true);
         superNode.SetActive(false);
@@ -26,6 +29,17 @@ public class Intro : MonoBehaviour
 
     void Update()
     {
+        if (!started)
+        {
+            delayTimer += Time.deltaTime;
+            if (delayTimer >= startDelay)
+            {
+                started = true;
+                videoPlayer.Play();
+            }
+            return;
+        }
+
         if (!videoPlayer.isPrepared || videoPlayer.frameCount == 0)
             return;
 
