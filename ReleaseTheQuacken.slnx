@@ -1,19 +1,28 @@
 ﻿<Solution>
   <Project Path="VFolders.csproj" />
+  <Project Path="MKEdgeDetectionComponents.csproj" />
+  <Project Path="MKEdgeDetection.csproj" />
   <Project Path="QFSW.QC.Extras.csproj" />
   <Project Path="QFSW.QC.csproj" />
   <Project Path="QFSW.QC.Grammar.csproj" />
+  <Project Path="MKEdgeDetectionEditor.csproj" />
   <Project Path="QFSW.QC.Editor.csproj" />
   <Project Path="QFSW.QC.Parsers.csproj" />
   <Project Path="VHierarchy.csproj" />
+  <Project Path="MKEdgeDetectionExamples.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="VInspector.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="QFSW.QC.Serializers.csproj" />
   <Project Path="QFSW.QC.Suggestors.csproj" />
   <Project Path="QFSW.QC.QGUI.csproj" />
+  <Project Path="MKEdgeDetectionSelectiveMaskModule.csproj" />
   <Project Path="QFSW.QC.UI.csproj" />
+  <Project Path="MKEdgeDetectionInstallWizard.csproj" />
   <Project Path="QFSW.QC.Demo.csproj" />
   <Project Path="QFSW.QC.Editor.Tools.csproj" />
+  <Project Path="MKEdgeDetectionBuildPreProcessor.csproj" />
   <Project Path="QFSW.QC.ScanRules.csproj" />
+  <Project Path="MKEdgeDetectionUniversalRendererFeature.csproj" />
+  <Project Path="MKEdgeDetectionUniversalVolumeComponent.csproj" />
 </Solution>
