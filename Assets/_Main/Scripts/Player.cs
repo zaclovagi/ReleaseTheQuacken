@@ -4,24 +4,21 @@ public class Player : MonoBehaviour
 {
     public float moveSpeed = 5f;
     public float rotateSpeed = 90f;
-    public float jumpForce = 4.5f;
     public float sizePerPoint = 0.01f;
     public int baseMaxEdibleValue = 10;
+    public GameObject quackPrefab;
 
-    private Rigidbody rb;
     private Collider col;
-    private bool isGrounded;
     private float baseMoveSpeed;
-    private float baseJumpForce;
     private float baseScale;
     private int score;
+    private readonly float quackCooldown = 1f;
+    private float lastQuackTime = -Mathf.Infinity;
 
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
         col = GetComponent<Collider>();
         baseMoveSpeed = moveSpeed;
-        baseJumpForce = jumpForce;
         baseScale = transform.localScale.x;
     }
 
@@ -33,10 +30,11 @@ public class Player : MonoBehaviour
         transform.Rotate(0f, horizontal * rotateSpeed * Time.deltaTime, 0f);
         transform.Translate(0f, 0f, vertical * moveSpeed * Time.deltaTime);
 
-        isGrounded = Physics.Raycast(col.bounds.center, Vector3.down, col.bounds.extents.y + 0.05f);
-
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        if (Input.GetKeyDown(KeyCode.Space) && quackPrefab != null && Time.time >= lastQuackTime + quackCooldown)
+        {
+            Instantiate(quackPrefab, transform.position, transform.rotation);
+            lastQuackTime = Time.time;
+        }
     }
 
     void OnTriggerEnter(Collider other)
@@ -70,6 +68,5 @@ public class Player : MonoBehaviour
         float sizeRatio = 1f + score * sizePerPoint;
         transform.localScale = Vector3.one * baseScale * sizeRatio;
         moveSpeed = baseMoveSpeed * sizeRatio;
-        jumpForce = baseJumpForce * Mathf.Sqrt(sizeRatio);
     }
 }
