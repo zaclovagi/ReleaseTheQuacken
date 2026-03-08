@@ -4,6 +4,7 @@ using UnityEngine;
 public class Game : MonoBehaviour
 {
     [SerializeField] private TMP_Text timerText;
+    [SerializeField] private GameObject victoryNode;
 
     private float _elapsed;
     private bool _running;
@@ -14,6 +15,12 @@ public class Game : MonoBehaviour
         _running = true;
     }
 
+    public void Win()
+    {
+        _running = false;
+        victoryNode.SetActive(true);
+    }
+
     void Update()
     {
         if (!_running) return;
@@ -21,4 +28,5 @@ public class Game : MonoBehaviour
         _elapsed += Time.deltaTime;
         timerText.text = _elapsed.ToString("F2");
     }
+
 }
